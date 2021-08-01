@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -10,44 +11,58 @@ namespace ConsoleApplication1
        
         static void Main(string[] args)
         {
-            Console.WriteLine("Set game pool whit different odd number of moves:");
+            Console.WriteLine("Set game pool whith more than one different odd number of moves:");
             string inptLine = Console.ReadLine();
             string[] avMoves = inptLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-
+            if (isCorrect(avMoves) == false) return;
             byte[] keyData = new byte[16];
-            RandomNumberGenerator rkey = new RNGCryptoServiceProvider();
+            RandomNumberGenerator rkey = new RNGCryptoServiceProvider(keyData);
             rkey.GetBytes(keyData);
-            string key = BitConverter.ToString(keyData).Replace("-", string.Empty);
-            string botMove = botMoves(avMoves);
-            
-            Console.WriteLine(HMACHASH(botMove, keyData));
-
+            string key = BitConverter.ToString(keyData).Replace("-", string.Empty);      
+            string botMove = avMoves[new Random().Next(0, avMoves.Length - 1)];         
+            Console.WriteLine(HMACHASH(botMove, key));
             Console.WriteLine("Awailiable moves:");
-            foreach (string i in avMoves)
-                Console.WriteLine("~  " + i);          
+            Dictionary<int, string> enterDict = new Dictionary<int, string>();
+            for (int i = 1; i <= avMoves.Length; i++)
+                enterDict.Add(i, avMoves[i - 1]);
+            enterDict.Add(0, "Exit");
+            foreach (KeyValuePair<int, string> keyValue in enterDict)
+            {
+                Console.WriteLine(keyValue.Key + " - " + keyValue.Value);
+            }     
             Console.Write("Choose your move: ");
-            string userM = Console.ReadLine();
-
+            int userM = Convert.ToInt32(Console.ReadLine());
+            string yourMove = enterDict[userM];
+            Console.WriteLine("Your move: " + yourMove);
+            if (yourMove.Equals("Exit")) return;
             Console.WriteLine("Bot move: " + botMove);
-            whoWins(createDict(inptLine), userM, botMove);
-
+            whoWins(createDict(inptLine), yourMove, botMove);
             Console.WriteLine(key);
-            
         }
 
-        static string HMACHASH(string str, byte[] bkey)
+        static bool isCorrect(string[] moves)
         {
+            int l = moves.Length;
+            if (((l % 2) == 0) || (l <= 1))
+            {
+                Console.WriteLine("You entered wrong number of moves! Try again.");
+                return false;
+            }
+            if (moves.Distinct().Count() != l)
+            {
+                Console.WriteLine("You entered equals moves! Try again.");
+                return false;
+            }
+            return true;
+        }
+
+        static string HMACHASH(string str, string key)
+        {
+            byte[] bkey = Encoding.Default.GetBytes(key);
             HMACSHA256 hmac = new HMACSHA256(bkey);
             byte[] bstr = Encoding.Default.GetBytes(str);
             byte[] bhash = hmac.ComputeHash(bstr);
             return BitConverter.ToString(bhash).Replace("-", string.Empty);
-            
-        }
-        static string botMoves(string[] moves)
-        {          
-            string res = moves[new Random().Next(0, moves.Length - 1)];
-            return res;
         }
 
         static void whoWins(Dictionary<string, string> myDict, string userMove, string botMove)
@@ -55,7 +70,6 @@ namespace ConsoleApplication1
             int count = 0;
             foreach (KeyValuePair<string, string> keyValue in myDict)
             {
-                
                 if (userMove.Equals(botMove))
                 {
                     Console.WriteLine("Draw!");
