@@ -9,22 +9,19 @@ namespace ConsoleApplication1
     class Program
     {
        
-        static void Main(string[] args)
+        static void Main(string[] argv)
         {
-            Console.WriteLine("Set game pool whith more than one different odd number of moves:");
-            string inptLine = Console.ReadLine();
-            string[] avMoves = inptLine.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            if (isCorrect(avMoves) == false) return;
+            if (isCorrect(argv) == false) return;
             byte[] keyData = new byte[16];
             RandomNumberGenerator rkey = new RNGCryptoServiceProvider(keyData);
             rkey.GetBytes(keyData);
             string key = BitConverter.ToString(keyData).Replace("-", string.Empty);      
-            string botMove = avMoves[new Random().Next(0, avMoves.Length - 1)];         
+            string botMove = argv[new Random().Next(0, argv.Length - 1)];         
             Console.WriteLine(HMACHASH(botMove, key));
             Console.WriteLine("Awailiable moves:");
             Dictionary<int, string> enterDict = new Dictionary<int, string>();
-            for (int i = 1; i <= avMoves.Length; i++)
-                enterDict.Add(i, avMoves[i - 1]);
+            for (int i = 1; i <= argv.Length; i++)
+                enterDict.Add(i, argv[i - 1]);
             enterDict.Add(0, "Exit");
             foreach (KeyValuePair<int, string> keyValue in enterDict)
             {
@@ -36,7 +33,7 @@ namespace ConsoleApplication1
             Console.WriteLine("Your move: " + yourMove);
             if (yourMove.Equals("Exit")) return;
             Console.WriteLine("Bot move: " + botMove);
-            whoWins(createDict(inptLine), yourMove, botMove);
+            whoWins(createDict(argv), yourMove, botMove);
             Console.WriteLine(key);
         }
 
@@ -84,10 +81,9 @@ namespace ConsoleApplication1
                 if (count == myDict.Count) Console.WriteLine("You lose =(");
             }
         }
-        static Dictionary<string, string> createDict(string s)
+        static Dictionary<string, string> createDict(string[] par)
         {
-            string str = s + " " + s;
-            string[] words = str.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] words = par.Concat(par).ToArray();
             int stlen = words.Length / 2;
             Dictionary<string, string> dict = new Dictionary<string, string>(stlen);
             for (int i = 0; i < stlen; i++)
